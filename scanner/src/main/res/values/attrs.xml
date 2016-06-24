@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="finder_style">
+
+        <attr name="finder_width" format="dimension"/>
+        <attr name="finder_height" format="dimension"/>
+        <attr name="finder_x_offset" format="dimension"/>
+        <attr name="finder_y_offset" format="dimension"/>
+
+    </declare-styleable>
+</resources>
