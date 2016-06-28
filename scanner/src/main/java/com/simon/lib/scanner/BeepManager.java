@@ -11,6 +11,10 @@ import android.util.Log;
 import java.io.Closeable;
 import java.io.IOException;
 
+/**
+ * @author sunmeng
+ * @date 16/6/17
+ */
 public final class BeepManager implements MediaPlayer.OnErrorListener, Closeable {
 
     private static final String TAG = BeepManager.class.getSimpleName();

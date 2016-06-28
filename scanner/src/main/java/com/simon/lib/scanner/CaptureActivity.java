@@ -3,21 +3,36 @@ package com.simon.lib.scanner;
 import android.content.Intent;
 import android.graphics.Point;
 import android.hardware.Camera;
+import android.net.Uri;
 import android.os.HandlerThread;
+import android.provider.Settings;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
+import android.widget.Toast;
 
-public class CaptureActivity extends AppCompatActivity implements DecodeHandler.OnResultListener {
+/**
+ * @author sunmeng
+ * @date 16/6/17
+ */
+public class CaptureActivity extends AppCompatActivity implements CameraPreview
+                                                                          .PreviewStateListener {
+    private static final String TAG = "CaptureActivity";
 
     private Camera.PreviewCallback mPreviewCb = new Camera.PreviewCallback() {
         public void onPreviewFrame(byte[] data, Camera camera) {
-            Camera.Parameters parameters = camera.getParameters();
-            Camera.Size size = parameters.getPreviewSize();
-            DecodeHandler.DecodeParams previewData = new DecodeHandler.DecodeParams(data, new
-                    Point(size.width, size.height), mPreview.getCameraOrientation(), new Point
-                    (mFinderView.getWidth(), mFinderView.getHeight()), mFinderView.getPreviewRect
-                    (), ScannerUtils.getWindowRotation(CaptureActivity.this));
+            DecodeHandler.DecodeParams previewData = null;
+            try {
+                Camera.Parameters parameters = camera.getParameters();
+                Camera.Size size = parameters.getPreviewSize();
+                previewData = new DecodeHandler.DecodeParams(data, new
+                        Point(size.width, size.height), mPreview.getCameraOrientation(), new Point
+                        (mFinderView.getWidth(), mFinderView.getHeight()), mFinderView
+                        .getPreviewRect(), ScannerUtils.getWindowRotation(CaptureActivity.this));
+            } catch (Exception e) {
+                Log.d(TAG, "failed to get frame data!", e);
+            }
             mDecodeHandler.decode(previewData);
         }
     };
@@ -34,7 +49,21 @@ public class CaptureActivity extends AppCompatActivity implements DecodeHandler.
         mDecodeThread = new HandlerThread("decode_thread");
         mDecodeThread.start();
         mDecodeHandler = new DecodeHandler(mDecodeThread.getLooper());
-        mDecodeHandler.setOnResultListener(this);
+        mDecodeHandler.setOnResultListener(new DecodeHandler.OnResultListener() {
+            @Override
+            public void onResult(final String text) {
+                if (text == null) {
+                    mPreview.setOneShotPreviewCallback(mPreviewCb);
+                    return;
+                }
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        handleResult(text);
+                    }
+                });
+            }
+        });
         setContentView(getLayoutID());
         mBeepManager = new BeepManager(this);
         mPreview = (CameraPreview) findViewById(R.id.preview_view);
@@ -50,23 +79,8 @@ public class CaptureActivity extends AppCompatActivity implements DecodeHandler.
                             ".finder_view'");
         }
         mFinderView.setVisibility(View.INVISIBLE);
-        mPreview.setPreviewCallback(mPreviewCb);
-        mPreview.setPreviewStateListener(new CameraPreview.PreviewStateListener() {
-            @Override
-            public void onPreviewStateChanged(boolean preview) {
-                if (preview) {
-                    mFinderView.setVisibility(View.VISIBLE);
-                } else {
-                    mFinderView.setVisibility(View.INVISIBLE);
-                }
-            }
-
-            @Override
-            public void onError(Throwable error) {
-                error.printStackTrace();
-                finish();
-            }
-        });
+        mPreview.setOneShotPreviewCallback(mPreviewCb);
+        mPreview.setPreviewStateListener(this);
     }
 
     protected int getLayoutID() {
@@ -75,8 +89,8 @@ public class CaptureActivity extends AppCompatActivity implements DecodeHandler.
 
     @Override
     protected void onPause() {
-        super.onPause();
         mPreview.stopPreview();
+        super.onPause();
     }
 
     @Override
@@ -101,17 +115,29 @@ public class CaptureActivity extends AppCompatActivity implements DecodeHandler.
         mBeepManager.close();
     }
 
+    protected void handleResult(String text) {
+        mBeepManager.beepAndVibrate();
+        Intent data = new Intent();
+        data.putExtra(Intent.EXTRA_TEXT, text);
+        setResult(RESULT_OK, data);
+        finish();
+    }
+
     @Override
-    public void onResult(final String text) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                mBeepManager.beepAndVibrate();
-                Intent data = new Intent();
-                data.putExtra(Intent.EXTRA_TEXT, text);
-                setResult(RESULT_OK, data);
-                finish();
-            }
-        });
+    public void onPreviewStateChanged(boolean preview) {
+        if (preview) {
+            mFinderView.setVisibility(View.VISIBLE);
+        } else {
+            mFinderView.setVisibility(View.INVISIBLE);
+        }
+    }
+
+    @Override
+    public void onPreviewError(Throwable error) {
+        Toast.makeText(this, R.string.permission_denied, Toast.LENGTH_SHORT).show();
+        Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+        intent.setData(Uri.parse("package:" + getPackageName()));
+        startActivity(intent);
+        finish();
     }
 }

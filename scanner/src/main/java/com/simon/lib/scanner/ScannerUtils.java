@@ -5,6 +5,11 @@ import android.graphics.Point;
 import android.graphics.Rect;
 import android.view.WindowManager;
 
+
+/**
+ * @author sunmeng
+ * @date 16/6/17
+ */
 public class ScannerUtils {
 
     /**

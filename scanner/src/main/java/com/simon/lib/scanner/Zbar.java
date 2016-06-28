@@ -8,6 +8,10 @@ import net.sourceforge.zbar.Image;
 import net.sourceforge.zbar.ImageScanner;
 import net.sourceforge.zbar.SymbolSet;
 
+/**
+ * @author sunmeng
+ * @date 16/6/17
+ */
 class Zbar implements IDecoder {
 
     static {

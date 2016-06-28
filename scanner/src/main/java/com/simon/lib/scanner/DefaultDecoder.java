@@ -6,6 +6,10 @@ import android.graphics.Rect;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * @author sunmeng
+ * @date 16/6/17
+ */
 public class DefaultDecoder {
 
 

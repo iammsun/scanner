@@ -8,6 +8,10 @@ import com.google.zxing.PlanarYUVLuminanceSource;
 import com.google.zxing.Result;
 import com.google.zxing.common.HybridBinarizer;
 
+/**
+ * @author sunmeng
+ * @date 16/6/17
+ */
 class Zxing implements IDecoder {
 
     private final MultiFormatReader mMultiFormatReader = new MultiFormatReader();

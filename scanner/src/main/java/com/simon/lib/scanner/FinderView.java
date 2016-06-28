@@ -14,6 +14,10 @@ import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.view.View;
 
+/**
+ * @author sunmeng
+ * @date 16/6/2
+ */
 public class FinderView extends View {
 
     protected final Paint paint;

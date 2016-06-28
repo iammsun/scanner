@@ -11,15 +11,19 @@ import android.view.SurfaceView;
 
 import com.google.zxing.client.android.camera.CameraConfigurationUtils;
 
+/**
+ * @author sunmeng
+ * @date 16/6/17
+ */
 public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {
 
-    public static final long TIME_INTERVAL_SAMPLE = 1000;
+    private static final long TIME_INTERVAL_SAMPLE = 1000;
 
     interface PreviewStateListener {
 
         void onPreviewStateChanged(boolean preview);
 
-        void onError(Throwable error);
+        void onPreviewError(Throwable error);
     }
 
     private Camera mCamera;
@@ -34,9 +38,7 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
 
     private final Runnable doAutoFocus = new Runnable() {
         public void run() {
-            if (mPreviewing) {
-                mCamera.autoFocus(autoFocusCB);
-            }
+            autoFocus();
         }
     };
 
@@ -54,7 +56,7 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         mPreviewStateListener = previewStateListener;
     }
 
-    private void changePreviewState(boolean previewing) {
+    private synchronized void changePreviewState(boolean previewing) {
         if (previewing == mPreviewing) {
             return;
         }
@@ -62,7 +64,7 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         notifyPreviewStateChanged();
     }
 
-    private void notifyPreviewStateChanged() {
+    private synchronized void notifyPreviewStateChanged() {
         if (mPreviewStateListener == null) {
             return;
         }
@@ -73,7 +75,7 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         if (mPreviewStateListener == null) {
             return;
         }
-        mPreviewStateListener.onError(throwable);
+        mPreviewStateListener.onPreviewError(throwable);
     }
 
     private boolean openCamera() {
@@ -100,14 +102,19 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
             mCamera = Camera.open(index);
             mCameraInfo = cameraInfo;
         } catch (Exception e) {
+            try {
+                mCamera.release();
+                mCamera = null;
+            } catch (Exception error) {
+            }
             notifyError(e);
             return false;
         }
-        setCamraParameters();
+        setPreviewSize();
         return mCamera != null;
     }
 
-    private void setCamraParameters() {
+    private void setPreviewSize() {
         if (mCamera == null) {
             return;
         }
@@ -133,18 +140,19 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
      *
      * @param previewCallback
      */
-    public void setPreviewCallback(PreviewCallback previewCallback) {
+    public void setOneShotPreviewCallback(PreviewCallback previewCallback) {
         mPreviewCallback = previewCallback;
-        if (mCamera != null) {
-            mCamera.setPreviewCallback(previewCallback);
+        if (!isPreviewing()) {
+            return;
         }
+        mCamera.setOneShotPreviewCallback(previewCallback);
     }
 
     /**
      * 停止预览
      */
     public void stopPreview() {
-        if (surfaceReady) {
+        if (!surfaceReady) {
             getHolder().removeCallback(this);
         }
         changePreviewState(false);
@@ -152,7 +160,6 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
             return;
         }
         try {
-            mCamera.setPreviewCallback(null);
             mCamera.stopPreview();
             mCamera.release();
             mCamera = null;
@@ -188,19 +195,38 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
                     (getContext())) % 4;
             mCamera.setDisplayOrientation(mOrientation * 90);
             mCamera.setPreviewDisplay(getHolder());
-            mCamera.setPreviewCallback(mPreviewCallback);
             mCamera.startPreview();
-            mCamera.autoFocus(autoFocusCB);
+            mCamera.setOneShotPreviewCallback(mPreviewCallback);
             changePreviewState(true);
         } catch (Exception e) {
+            try {
+                mCamera.release();
+                mCamera = null;
+            } catch (Exception error) {
+            }
             notifyError(e);
+            return;
+        }
+        autoFocus();
+    }
+
+    private void autoFocus() {
+        if (!isPreviewing()) {
+            return;
+        }
+        try {
+            mCamera.autoFocus(autoFocusCB);
+        } catch (Exception e) {
+            autoFocusHandler.postDelayed(doAutoFocus, TIME_INTERVAL_SAMPLE);
         }
     }
 
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
-        surfaceReady = true;
-        startPreview();
+        if (!surfaceReady) {
+            surfaceReady = true;
+            startPreview();
+        }
     }
 
     @Override
@@ -210,11 +236,10 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
         surfaceReady = false;
-        stopPreview();
     }
 
 
-    public boolean isPreviewing() {
+    public synchronized boolean isPreviewing() {
         return mPreviewing;
     }
 }
