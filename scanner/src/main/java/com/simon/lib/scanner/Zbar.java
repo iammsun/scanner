@@ -1,7 +1,6 @@
 package com.simon.lib.scanner;
 
 import android.graphics.Point;
-import android.graphics.Rect;
 
 import net.sourceforge.zbar.Config;
 import net.sourceforge.zbar.Image;
