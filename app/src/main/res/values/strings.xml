@@ -1,4 +1,11 @@
 <resources>
     <string name="app_name">扫码器</string>
-    <string name="action_settings">Settings</string>
+    <string-array name="options_view">
+        <item>文本</item>
+        <item>网页</item>
+    </string-array>
+    <string-array name="options_mimetype_view">
+        <item>text/plain</item>
+        <item>text/html</item>
+    </string-array>
 </resources>

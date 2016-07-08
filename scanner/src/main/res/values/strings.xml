@@ -1,3 +1,4 @@
 <resources>
     <string name="permission_denied">请在设置中打开相机相关权限</string>
+    <string name="scanner_help">将二维码/条码放入框内,即可自动扫描</string>
 </resources>

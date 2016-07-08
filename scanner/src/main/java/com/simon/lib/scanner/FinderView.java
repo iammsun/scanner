@@ -115,6 +115,11 @@ public class FinderView extends View {
                 } else if (idx == R.styleable.finder_style_finder_y_offset) {
                     mYOffset = styles.getDimensionPixelSize(R.styleable
                             .finder_style_finder_y_offset, mYOffset);
+                } else if (idx == R.styleable.finder_style_finder_help) {
+                    int resource = styles.getResourceId(R.styleable.finder_style_finder_help, 0);
+                    if (resource != 0) {
+                        mHintText = getResources().getString(resource);
+                    }
                 }
             }
         } finally {

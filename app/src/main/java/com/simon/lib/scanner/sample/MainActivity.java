@@ -1,24 +1,26 @@
 package com.simon.lib.scanner.sample;
 
+import android.app.AlertDialog;
+import android.app.Dialog;
+import android.app.DialogFragment;
+import android.content.ActivityNotFoundException;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
-import android.view.View;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.widget.Toast;
 
 import com.simon.lib.scanner.CaptureActivity;
 
 public class MainActivity extends AppCompatActivity {
 
+    private String[] mimeTypes;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        mimeTypes = getResources().getStringArray(R.array.options_mimetype_view);
         startActivityForResult(new Intent(MainActivity.this, CaptureActivity.class), 0);
     }
 
@@ -26,18 +28,53 @@ public class MainActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (resultCode == RESULT_OK) {
-            open(data.getStringExtra(Intent.EXTRA_TEXT));
+            onResult(data.getStringExtra(Intent.EXTRA_TEXT));
+        } else {
+            finish();
         }
-        finish();
     }
 
-    private void open(String content) {
-        Uri uri = Uri.parse(content);
-        Intent it = new Intent(Intent.ACTION_VIEW, uri);
+    private void onResult(final String text) {
+        new DialogFragment() {
+            @Override
+            public Dialog onCreateDialog(Bundle savedInstanceState) {
+                AlertDialog.Builder builder = new AlertDialog.Builder(getActivity()).setItems(R
+                        .array.options_view, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        openAsMimeType(text, mimeTypes[which]);
+                        finish();
+                    }
+                });
+                return builder.create();
+            }
+
+            @Override
+            public void onDismiss(DialogInterface dialog) {
+                super.onDismiss(dialog);
+                finish();
+            }
+        }.show(getFragmentManager(), "dialog");
+    }
+
+
+    private void openAsMimeType(String text, String mimeType) {
+        if (mimeTypes[0].equals(mimeType)) {
+            Toast.makeText(this, text, Toast.LENGTH_LONG).show();
+            return;
+        }
+        Uri uri = Uri.parse(text);
+        if (uri.getScheme() == null) {
+            uri = Uri.parse("http://" + text);
+        }
+        Intent intent = new Intent();
+        intent.setAction(Intent.ACTION_VIEW);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        intent.setDataAndType(uri, mimeType);
         try {
-            startActivity(it);
-        } catch (Exception e) {
-            Toast.makeText(this, content, Toast.LENGTH_SHORT).show();
+            startActivity(intent);
+        } catch (ActivityNotFoundException e) {
+            Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
 

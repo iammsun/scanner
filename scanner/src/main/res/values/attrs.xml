@@ -6,6 +6,7 @@
         <attr name="finder_height" format="dimension"/>
         <attr name="finder_x_offset" format="dimension"/>
         <attr name="finder_y_offset" format="dimension"/>
+        <attr name="finder_help" format="reference"/>
 
     </declare-styleable>
 </resources>

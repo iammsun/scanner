@@ -19,7 +19,7 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
 
     private static final long TIME_INTERVAL_SAMPLE = 1000;
 
-    interface PreviewStateListener {
+    public interface PreviewStateListener {
 
         void onPreviewStateChanged(boolean preview);
 
