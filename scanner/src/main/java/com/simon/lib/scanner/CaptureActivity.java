@@ -3,9 +3,10 @@ package com.simon.lib.scanner;
 import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
-import android.os.Bundle;
 import android.provider.Settings;
 import android.support.v7.app.AppCompatActivity;
+import android.os.Bundle;
+import android.view.View;
 import android.widget.Toast;
 
 /**
@@ -16,25 +17,31 @@ public class CaptureActivity extends AppCompatActivity implements CameraPreview
                                                                           .PreviewStateListener,
                                                                   DecodeHandler.OnResultListener {
 
-    private CaptureFragment fragment;
+    protected CaptureFragment fragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_capture);
-        int layout = getLayoutID();
-        if (layout != 0) {
-            fragment = CaptureFragment.newInstance(layout);
+        setContentView(getLayoutID());
+        if (savedInstanceState == null) {
+            fragment = CaptureFragment.newInstance();
+            View fragmentContainer = findViewById(R.id.capture_fragment);
+            if (fragmentContainer == null) {
+                throw new RuntimeException("Your content must have a fragment container whose id " +
+                        "attribute is R.id.fragment'");
+            }
+            getSupportFragmentManager().beginTransaction().replace(R.id.capture_fragment, fragment)
+                    .commit();
         } else {
-            fragment = CaptureFragment.newInstance(null);
+            fragment = (CaptureFragment) getSupportFragmentManager().findFragmentById(R.id
+                    .capture_fragment);
         }
-        getSupportFragmentManager().beginTransaction().replace(R.id.fragment, fragment).commit();
         fragment.setPreviewStateListener(this);
         fragment.setOnResultListener(this);
     }
 
     public int getLayoutID() {
-        return R.layout.fragment_capture;
+        return R.layout.activity_capture;
     }
 
     @Override
@@ -48,7 +55,6 @@ public class CaptureActivity extends AppCompatActivity implements CameraPreview
         Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
         intent.setData(Uri.parse("package:" + getPackageName()));
         startActivity(intent);
-        finish();
     }
 
     @Override

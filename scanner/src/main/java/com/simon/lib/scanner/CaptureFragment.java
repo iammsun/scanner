@@ -18,8 +18,7 @@ public class CaptureFragment extends Fragment {
 
     private static final String TAG = "CaptureFragment";
 
-    private static final String EXTRA_TITLE = "title";
-    private static final String EXTRA_RESOURCE = "layout_res";
+    private static final String EXTRA_OFFSETS = "offsets";
 
     private Camera.PreviewCallback mPreviewCb = new Camera.PreviewCallback() {
         public void onPreviewFrame(byte[] data, Camera camera) {
@@ -43,25 +42,26 @@ public class CaptureFragment extends Fragment {
     private FinderView mFinderView;
     private HandlerThread mDecodeThread;
     private DecodeHandler mDecodeHandler;
-    private String mTitle;
-    private int mResourceLayout;
+    private Point mOffsets;
     private CameraPreview.PreviewStateListener mPreviewStateListener;
     private DecodeHandler.OnResultListener mResultListener;
 
-    public static CaptureFragment newInstance(String title) {
+    public static CaptureFragment newInstance() {
         CaptureFragment fragment = new CaptureFragment();
-        Bundle args = new Bundle();
-        args.putString(EXTRA_TITLE, title);
-        fragment.setArguments(args);
         return fragment;
     }
 
-    public static CaptureFragment newInstance(int resouceId) {
-        CaptureFragment fragment = new CaptureFragment();
-        Bundle args = new Bundle();
-        args.putInt(EXTRA_RESOURCE, resouceId);
-        fragment.setArguments(args);
-        return fragment;
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putParcelable(EXTRA_OFFSETS, mOffsets);
+    }
+
+    public void setFramePosition(int xoffset, int yoffset) {
+        mOffsets = new Point(xoffset, yoffset);
+        if (mFinderView != null) {
+            mFinderView.setFramePosition(xoffset, yoffset);
+        }
     }
 
     public void setPreviewStateListener(CameraPreview.PreviewStateListener previewStateListener) {
@@ -75,31 +75,19 @@ public class CaptureFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (getArguments() != null) {
-            mTitle = getArguments().getString(EXTRA_TITLE);
-            mResourceLayout = getArguments().getInt(EXTRA_RESOURCE, 0);
+        if (savedInstanceState != null) {
+            mOffsets = savedInstanceState.getParcelable(EXTRA_OFFSETS);
         }
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View view = inflater.inflate(mResourceLayout != 0 ? mResourceLayout : R.layout
-                .fragment_capture, container, false);
+        View view = inflater.inflate(R.layout.fragment_capture, container, false);
         mFinderView = (FinderView) view.findViewById(R.id.finder_view);
         mPreview = (CameraPreview) view.findViewById(R.id.preview_view);
-        if (mPreview == null) {
-            throw new RuntimeException(
-                    "Your content must have a CameraPreview whose id attribute is 'R.id" +
-                            ".preview_view'");
-        }
-        if (mFinderView == null) {
-            throw new RuntimeException(
-                    "Your content must have a FinderView whose id attribute is 'R.id" +
-                            ".finder_view'");
-        }
-        if (mTitle != null) {
-            mFinderView.setHint(mTitle);
+        if (mOffsets != null) {
+            mFinderView.setFramePosition(mOffsets.x, mOffsets.y);
         }
         return view;
     }

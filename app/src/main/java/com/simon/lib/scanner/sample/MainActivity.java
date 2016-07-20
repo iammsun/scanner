@@ -1,5 +1,6 @@
 package com.simon.lib.scanner.sample;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.DialogFragment;
@@ -8,20 +9,31 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
 import android.widget.Toast;
 
 import com.simon.lib.scanner.CaptureActivity;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends Activity {
 
     private String[] mimeTypes;
+
+    private static final String EXTRA_MIME_TYPES = "mime_types";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        mimeTypes = getResources().getStringArray(R.array.options_mimetype_view);
-        startActivityForResult(new Intent(MainActivity.this, CaptureActivity.class), 0);
+        if (savedInstanceState == null) {
+            mimeTypes = getResources().getStringArray(R.array.options_mimetype_view);
+            startActivityForResult(new Intent(MainActivity.this, CaptureActivity.class), 0);
+        } else {
+            mimeTypes = savedInstanceState.getStringArray(EXTRA_MIME_TYPES);
+        }
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putStringArray(EXTRA_MIME_TYPES, mimeTypes);
     }
 
     @Override
